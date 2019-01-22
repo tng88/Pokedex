@@ -1,0 +1,235 @@
+package pokedex;
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.table.*;
+        
+public class ViewAttack extends JPanel
+{
+    public boolean attackSet = false;
+    public DefaultTableModel learnsetModel, tmsetModel, hmsetModel;
+    public JLabel ppLbl, powLbl, accLbl, attackTypeLbl;
+    public JList attList = new JList();
+    public JPanel hmSetPnl, tmSetPnl, learnSetPnl;
+    public JScrollPane learnSetPane, descriptionPane, tmSetPane, hmSetPane;
+    public JTabbedPane learnedTabs;
+    public JTable learnsetTable, tmsetTable, hmsetTable;
+    public JTextField attack, pp, pow, acc, attackType;
+    public JTextPane description;
+    public String att = "";
+    public String game = "";
+    
+    public ViewAttack()
+    {   
+        String[] attacks = pkmnDB.getAttacks();
+        attList.setListData(attacks);
+        
+        attack = new JTextField();
+            attack.setBounds(5, 5, 145, 20);
+            attack.setBackground(Color.white);
+            attack.setEditable(false);
+            
+        ppLbl = new JLabel("Power Points");
+            ppLbl.setBounds(attack.getX(), attack.getY() + attack.getHeight() + 5, 80, 20);
+        
+        pp = new JTextField();
+            pp.setBounds(ppLbl.getX() + ppLbl.getWidth() + 5, ppLbl.getY(), 60, 20);
+            pp.setBackground(Color.white);
+            pp.setHorizontalAlignment(JTextField.LEFT);
+            pp.setEditable(false);
+        
+        powLbl = new JLabel("Base Power");
+            powLbl.setBounds(ppLbl.getX(), ppLbl.getY() + ppLbl.getHeight() + 5, 80, 20);
+                
+        pow = new JTextField();
+            pow.setBounds(powLbl.getX() + powLbl.getWidth() + 5, powLbl.getY(), 60, 20);
+            pow.setBackground(Color.white);
+            pow.setHorizontalAlignment(JTextField.LEFT);
+            pow.setEditable(false);
+            
+        accLbl = new JLabel("Accuracy");
+            accLbl.setBounds(powLbl.getX(), powLbl.getY() + powLbl.getHeight() + 5, 80, 20);
+        
+        acc = new JTextField();
+            acc.setBounds(accLbl.getX() + accLbl.getWidth() + 5, accLbl.getY(), 60, 20);
+            acc.setBackground(Color.white);
+            acc.setHorizontalAlignment(JTextField.LEFT);
+            acc.setEditable(false);
+            
+        attackTypeLbl = new JLabel("Type");
+            attackTypeLbl.setBounds(accLbl.getX(), accLbl.getY() + accLbl.getHeight() + 5, 80, 20);
+            
+        attackType = new JTextField();
+            attackType.setBounds(attackTypeLbl.getX() + attackTypeLbl.getWidth() + 5, attackTypeLbl.getY(), 60, 20);
+            attackType.setBackground(Color.white);
+            attackType.setHorizontalAlignment(JTextField.LEFT);
+            attackType.setEditable(false);
+        
+        description = new JTextPane();
+            description.setEditable(false);
+            description.setBackground(Color.white);
+        descriptionPane = new JScrollPane(description);
+            descriptionPane.setBounds(attack.getX() + attack.getWidth() + 5, attack.getY(), 160, 120);
+            descriptionPane.setBackground(Color.white);
+        
+        learnsetModel = new DefaultTableModel(new String[]{"No.", "Name", "Level"}, 1);
+        learnsetTable = new JTable(learnsetModel);
+            learnsetTable.getColumnModel().getColumn(0).setMinWidth(40);
+            learnsetTable.getColumnModel().getColumn(0).setMaxWidth(40);
+            learnsetTable.getColumnModel().getColumn(1).setMinWidth(100);
+            learnsetTable.getColumnModel().getColumn(1).setMaxWidth(100);
+            learnsetTable.getTableHeader().setReorderingAllowed(false);
+            learnsetTable.setEnabled(false);
+        learnSetPane = new JScrollPane(learnsetTable);
+            learnSetPane.setBounds(5, 5, 310, 235);
+            learnSetPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        learnSetPnl = new JPanel();
+            learnSetPnl.setBounds(0, 0, 325, 272);
+            learnSetPnl.setLayout(null);
+            learnSetPnl.add(learnSetPane);
+            
+        tmsetModel = new DefaultTableModel(new String[]{"No.", "Name"}, 1);
+        tmsetTable = new JTable(tmsetModel);
+            tmsetTable.getColumnModel().getColumn(0).setMinWidth(40);
+            tmsetTable.getColumnModel().getColumn(0).setMaxWidth(40);
+            tmsetTable.getTableHeader().setReorderingAllowed(false);
+            tmsetTable.setEnabled(false);
+        tmSetPane = new JScrollPane(tmsetTable);
+            tmSetPane.setBounds(5, 5, 310, 235);
+            tmSetPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        tmSetPnl = new JPanel();
+            tmSetPnl.setBounds(0, 0, 325, 272);
+            tmSetPnl.setLayout(null);
+            tmSetPnl.add(tmSetPane);
+            
+        hmsetModel = new DefaultTableModel(new String[]{"No.", "Name"}, 1);
+        hmsetTable = new JTable(hmsetModel);
+            hmsetTable.getColumnModel().getColumn(0).setMinWidth(40);
+            hmsetTable.getColumnModel().getColumn(0).setMaxWidth(40);
+            hmsetTable.getTableHeader().setReorderingAllowed(false);
+            hmsetTable.setEnabled(false);
+        hmSetPane = new JScrollPane(hmsetTable);
+            hmSetPane.setBounds(5, 5, 310, 235);
+            hmSetPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        hmSetPnl = new JPanel();
+            hmSetPnl.setBounds(0, 0, 325, 272);
+            hmSetPnl.setLayout(null);
+            hmSetPnl.add(hmSetPane);
+            
+        learnedTabs = new JTabbedPane();
+            learnedTabs.setBounds(attackTypeLbl.getX(), attackTypeLbl.getY() + attackTypeLbl.getHeight() + 5, 325, 272);
+            learnedTabs.add("Level", learnSetPnl);
+            learnedTabs.add("TM", tmSetPnl);
+            learnedTabs.add("HM", hmSetPnl);
+        
+        setLayout(null);
+        setBounds(0, 0, 450, 405);
+            add(attack);
+            add(pp);
+            add(ppLbl);
+            add(pow);
+            add(powLbl);
+            add(acc);
+            add(accLbl);
+            add(attackTypeLbl);
+            add(attackType);
+            add(descriptionPane);
+            add(learnedTabs);
+    }
+    
+    public void setAttackData()
+    {
+        String[] stats = pkmnDB.getAttackStats(att);
+        String[][] learnSet = pkmnDB.getLearnSet(att);
+        String[][] tmSet = pkmnDB.getMachineSet(att, "tm");
+        String[][] hmSet = pkmnDB.getMachineSet(att, "hm");
+
+        if(stats != null && stats.length == 6)
+        {
+            attack.setText(stats[0]);
+            pp.setText(stats[1]);
+            pow.setText(stats[2]);
+            acc.setText(stats[3]);
+            description.setText(stats[4]);
+            attackType.setText(stats[5]);
+        }
+        else
+        {
+            attack.setText("");
+            pp.setText("");
+            pow.setText("");
+            acc.setText("");
+            description.setText("");
+            attackType.setText("");   
+        }
+        
+        if(learnSet != null && learnSet.length > 0)
+        {
+            while(learnsetModel.getRowCount() > 0)
+                learnsetModel.removeRow(0);
+
+            for(int i = 0; i < learnSet.length; i++)
+                learnsetModel.addRow(learnSet[i]);
+        }
+        else
+        {
+            while(learnsetModel.getRowCount() > 0)
+                learnsetModel.removeRow(0);
+
+            if(learnsetModel.getRowCount() == 0)
+                learnsetModel.addRow(new String[]{""});
+        }
+
+        if(tmSet != null && tmSet.length > 0)
+        {
+            while(tmsetModel.getRowCount() > 0)
+                tmsetModel.removeRow(0);
+
+            for(int i = 0; i < tmSet.length; i++)
+                tmsetModel.addRow(tmSet[i]);
+        }
+        else
+        {
+            while(tmsetModel.getRowCount() > 0)
+                tmsetModel.removeRow(0);
+
+            if(tmsetModel.getRowCount() == 0)
+                tmsetModel.addRow(new String[]{""});
+        }
+
+        if(hmSet != null && hmSet.length > 0)
+        {
+            while(hmsetModel.getRowCount() > 0)
+                hmsetModel.removeRow(0);
+
+            for(int i = 0; i < hmSet.length; i++)
+                hmsetModel.addRow(hmSet[i]);
+        }
+        else
+        {
+            while(hmsetModel.getRowCount() > 0)
+                hmsetModel.removeRow(0);
+
+            if(hmsetModel.getRowCount() == 0)
+                hmsetModel.addRow(new String[]{""});
+        }
+        
+        attackSet = true;
+    }
+    
+    public void setAttack(String attack)
+    {
+        att = attack;
+    }
+    
+    public void setGame()
+    {
+        if(attackSet)
+            setAttackData();
+    }
+    
+    public JList getList()
+    {
+        return attList;
+    }
+}
