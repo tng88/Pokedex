@@ -1,0 +1,281 @@
+package pokedex;
+
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+public class pkmnDB
+{
+    public static Connection conn = null;
+    public static Statement stmt = null;
+    public static ResultSet rs = null;
+    private static String game_id1 = "";
+    private static String game_id2 = "";
+    
+    public pkmnDB()
+    {
+        //insert();
+    }
+    
+    // method used to insert new data
+    public static void insert()
+    {
+        try
+        {
+        
+            Class.forName("net.ucanaccess.jdbc.UcanaccessDriver");
+            conn = DriverManager.getConnection("jdbc:ucanaccess://pokedex.accdb");
+            stmt = conn.createStatement();
+            
+            File insert = new File("insert.txt");
+            Scanner sc = new Scanner(insert);
+        
+            while(sc.hasNextLine())
+                stmt.executeUpdate(sc.nextLine());
+            
+            rs.close();
+            stmt.close();
+            conn.close();
+        }
+        catch(SQLException ex){}
+        catch(ClassNotFoundException ex){}
+        catch(FileNotFoundException ex){}
+    }
+    
+    public static void setGame(String str, String str2)
+    {   
+        game_id1 = str;
+        game_id2 = str2;
+    }
+    
+    private static String[] getData(String str)
+    {
+        ArrayList<String> data = new ArrayList<>();
+        
+        try
+        {
+            Class.forName("net.ucanaccess.jdbc.UcanaccessDriver");
+            conn = DriverManager.getConnection("jdbc:ucanaccess://pokedex.accdb");
+            stmt = conn.createStatement();
+            
+            rs = stmt.executeQuery(str);
+            
+            boolean machineSet = str.contains("pokemon.pkmn_id, pokemon.name ");
+            boolean machines = (str.contains("hm.hm_name") || str.contains("tm.tm_name")) && str.contains("description");
+            boolean moveset = str.contains("moveset_");
+            boolean pkmnTypes = str.contains("type1") && str.contains("type2");
+            boolean stats = str.contains("stats");
+            boolean attackStats = str.contains("pp");
+            boolean stageInfo = str.contains("pkmn_stages");
+            boolean stageOne = str.contains("evolution_stage1");
+            boolean stageTwo = str.contains("evolution_stage2");
+            boolean stageThree = str.contains("evolution_stage3");
+            
+            while(rs.next())
+            {   
+                if(pkmnTypes || machineSet || stageOne)
+                {                    
+                    data.add(rs.getString(1));
+                    data.add(rs.getString(2));
+                }
+                else if(machines || stats || moveset || stageInfo)
+                {
+                    data.add(rs.getString(1));
+                    data.add(rs.getString(2));
+                    data.add(rs.getString(3));
+                }
+                else if(attackStats || stageThree)
+                {
+                    data.add(rs.getString(1));
+                    data.add(rs.getString(2));
+                    data.add(rs.getString(3));
+                    data.add(rs.getString(4));
+                    data.add(rs.getString(5));
+                    data.add(rs.getString(6));
+                }
+                else if(stageTwo)
+                {
+                    data.add(rs.getString(1));
+                    data.add(rs.getString(2));
+                    data.add(rs.getString(3));
+                    data.add(rs.getString(4));
+                }
+                else
+                {
+                    data.add(rs.getString(1));
+                }
+            }
+            
+            rs.close();
+            stmt.close();
+            conn.close();
+        }
+        catch(SQLException ex)
+        {
+            System.out.println("1. Error in connection: " + ex.getMessage() + "\n" + str);
+        }
+        catch(ClassNotFoundException ex)
+        {
+            System.out.println("2. Error in connection: " + ex.getMessage() + "\n" + str);
+        }
+        
+        return data.toArray(new String[data.size()]);
+    }
+    
+    //    returns pokemon name
+    public static String[] getName(String str)
+    {
+        return getData("SELECT name FROM pokemon WHERE pkmn_id="+str);
+    }
+    
+    //    return pokedex entry for selected pokemon
+    public static String[] getEntry(String str)
+    {
+        return getData("SELECT entry FROM pkdx_entry_" + game_id1 + " WHERE pkmn_id="+str);
+    }
+    
+    //    returns pokemon category
+    public static String[] getPkmnCat(String str)
+    {
+        return getData("SELECT cat FROM pkmn_cat WHERE pkmn_id="+str);
+    }
+    
+    //    returns list of attacks
+    public static String[] getAttacks()
+    {
+        return getData("SELECT attack_name FROM attack_list");
+    }
+    
+    //  returns pokemon types
+    public static String[] getPkmnType(String num)
+    {
+        return getData("SELECT type1.type_name, type2.type_name FROM (type_list AS type1 INNER JOIN (pkmn_type INNER JOIN type_list AS type2 ON pkmn_type.type2 = type2.type_id) ON type1.type_id = pkmn_type.type1) INNER JOIN pokemon ON pkmn_type.pkmn_id = pokemon.pkmn_id WHERE (((pokemon.pkmn_id)=" + num + "));");
+    }
+    
+    //  returns pokemon stats
+    public static String[] getPkmnStats(String pkmn) 
+    {
+        String[] statsData = getData("SELECT stats.weight, stats.height, exp_growth.rate FROM exp_growth INNER JOIN (pokemon INNER JOIN stats ON pokemon.pkmn_id = stats.pkmn_id) ON exp_growth.exgain_id = stats.expgain_id WHERE (((pokemon.pkmn_id)=" + pkmn + "));");
+        
+        return statsData;
+    }
+    
+    //  returns list of machines pokemon learns
+    public static String[][] getMachine(String machine, String num)
+    {
+        String[] machineData = getData("SELECT " + machine + "." + machine + "_name, attack_list.attack_name, attack_info.description FROM (pokemon INNER JOIN (" + machine + "_moveset INNER JOIN (" + machine + " INNER JOIN (attack_list INNER JOIN " + machine + "_list ON attack_list.attack_id = " + machine + "_list.attack_id) ON " + machine + "." + machine + "_id = " + machine + "_list." + machine + "_id) ON (" + machine + "_moveset." + machine + "_id = " + machine + "." + machine + "_id) AND (" + machine + "_moveset." + machine + "_id = " + machine + "_list." + machine + "_id)) ON pokemon.pkmn_id = " + machine + "_moveset.pkmn_id) INNER JOIN attack_info ON attack_list.attack_id = attack_info.attack_id WHERE (((pokemon.pkmn_id)=" + num + ")) ORDER BY " + machine + "." + machine + "_name;");
+
+        String[][] machineset = new String[machineData.length/3][3];
+        
+        for(int i = 0, j = 0; i < machineset.length; i++, j+=3)
+        {
+            machineset[i][0] = machineData[j];
+            machineset[i][1] = machineData[j+1];
+            machineset[i][2] = machineData[j+2];
+        }
+        
+        return machineset;
+    }
+    
+    //  returns a pokemon move set; level, name, and description
+    public static String[][] getMoveset(String num)
+    {
+        String[] moveData = getData("SELECT moveset_" + game_id1 + ".level, attack_list.attack_name, attack_info.description FROM (attack_list INNER JOIN moveset_" + game_id1 + " ON attack_list.attack_id = moveset_" + game_id1 + ".attack_id) INNER JOIN attack_info ON attack_list.attack_id = attack_info.attack_id WHERE (((moveset_" + game_id1 + ".pkmn_id)=" + num + ")) ORDER BY moveset_" + game_id1 + ".pk_att_id;");
+        
+        String[][] moveset = new String[moveData.length/3][3];
+        
+        for(int i = 0, j = 0; i < moveset.length; i++, j+=3)
+        {
+            moveset[i][0] = moveData[j];
+            moveset[i][1] = moveData[j+1];
+            moveset[i][2] = moveData[j+2];
+        }
+        
+        return moveset;
+    }
+    
+    //  returns list of games for the generation
+    public static String[] getGames(int gen)
+    {
+        return getData("SELECT game FROM gen_games WHERE generation=" + gen);
+    }
+    
+    //  returns list of pokemon
+    public static String[] getPkmn()
+    {
+        return getData("SELECT name FROM pokemon");
+    }
+    
+    //  returns attack stats
+    public static String[] getAttackStats(String att)
+    {
+        return getData("SELECT attack_list.attack_name, attack_info.pp, attack_info.pow, attack_info.acc, attack_info.description, type_list.type_name FROM ((attack_type INNER JOIN type_list ON attack_type.type_id = type_list.type_id) INNER JOIN attack_list ON attack_type.attack_id = attack_list.attack_id) INNER JOIN attack_info ON attack_list.attack_id = attack_info.attack_id WHERE (((attack_list.attack_id)=" + att + "));");
+    }
+    
+    public static String[] getStageInfo(String str)
+    {
+        return getData("SELECT * FROM pkmn_stages WHERE pkmn_id=" + str);
+    }
+    
+    public static String[] getStages(String str, String str2)
+    {
+        return getData("SELECT * FROM " + str2 + " WHERE evolution_id=" + str);
+    }
+    
+    public static String[] getBranchStages(String str)
+    {
+        return getData("SELECT stage FROM pkmn_stages WHERE pkmn_id=" + str);
+    }
+    
+    public static String[] getBranchInfo(String str, String str2)
+    {
+        return getData("SELECT * FROM evolution_" + str + " WHERE stage1=" + str2 + " ORDER BY evolution_id");
+    }
+    
+    //  returns what level a pokemon learns move
+    public static String[][] getLearnSet(String att)
+    {
+        String str = "SELECT pokemon.pkmn_id, pokemon.name, moveset_" + game_id1 + ".level "
+                + "FROM pokemon INNER JOIN (attack_list INNER JOIN moveset_" + game_id1 + " ON attack_list.attack_id = moveset_" + game_id1 + ".attack_id) ON pokemon.pkmn_id = moveset_" + game_id1 + ".pkmn_id "
+                + "WHERE (((attack_list.attack_id)=" + att + ")) ORDER BY pokemon.pkmn_id, moveset_" + game_id1 + ".level;";
+        String[] pkmnData = getData(str);
+        
+        String[][] learnset = new String[pkmnData.length/3][3];
+        
+        for(int i = 0, j = 0; i < learnset.length; i++, j+=3)
+        {
+            learnset[i][0] = pkmnData[j];
+            learnset[i][1] = pkmnData[j+1];
+            learnset[i][2] = pkmnData[j+2];
+        }
+        
+        return learnset;
+    }
+    
+    //  returns what pokemon learn move as a machine
+    public static String[][] getMachineSet(String att, String machine)
+    {
+        String str = "SELECT pokemon.pkmn_id, pokemon.name " +
+                    "FROM attack_list INNER JOIN ((pokemon INNER JOIN " + machine + "_moveset ON pokemon.pkmn_id = " + machine + "_moveset.pkmn_id) INNER JOIN " + machine + "_list ON " + machine + "_moveset." + machine + "_id = " + machine + "_list." + machine + "_id) ON attack_list.attack_id = " + machine + "_list.attack_id " +
+                    "WHERE (((attack_list.attack_id)=" + att + ")) " +
+                    "ORDER BY pokemon.pkmn_id;";
+        
+        String[] machineData = getData(str);
+        
+        String[][] machineSet = new String[machineData.length/2][2];
+        
+        for(int i = 0, j = 0; i < machineSet.length; i++, j+=2)
+        {
+            machineSet[i][0] = machineData[j];
+            machineSet[i][1] = machineData[j+1];
+        }        
+        
+        return machineSet;
+    }
+}
