@@ -1,0 +1,266 @@
+package pokedex;
+
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class Pokedex
+{    
+    public static void main(String[] args)
+    {
+        new Pokedex();
+    }
+        
+    public boolean att = false, pkmn = false;
+    public ButtonGroup group;
+    public int generation = 1;
+    public JFrame window = new JFrame();
+    public JList listDisplay = new JList();
+    public JMenuBar menuBar = new JMenuBar();
+    public JMenu genMenu = new JMenu("Gen");
+    public JMenu gameMenu = new JMenu("Games");
+    public JMenu viewMenu = new JMenu("View");
+    public JMenuItem attView = new JMenuItem("Attacks");
+    public JMenuItem pdxView = new JMenuItem("Pokemon");
+    public JScrollPane scrollPane;
+    public JRadioButtonMenuItem[] games;
+    public JRadioButtonMenuItem selected;
+    public JSplitPane mainDisplay;
+    public String game_id = "rb";
+    
+    public Listener listener = new Listener();    
+    public ViewPkmn viewPkmn;
+    public ViewAttack viewAttack;
+    public pkmnDB pkmndb = new pkmnDB();
+    
+    public Pokedex()
+    {
+        mainDisplay = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);  
+            mainDisplay.setDividerSize(1);
+            mainDisplay.setRightComponent(new JPanel());
+            mainDisplay.setEnabled(false);
+                
+        buildMenu();
+        
+        buildScrollPanel();
+        
+        window.add(mainDisplay);
+        window.setJMenuBar(menuBar);
+        window.setTitle("Pokedex");
+        window.setSize(590, 461);
+        window.setLocationRelativeTo(null);
+        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.setResizable(false);
+        window.setVisible(true);
+    }
+    
+    public void buildMenu()
+    {
+        buildGameMenu();
+        
+        pkmnDB.setGame(game_id, game_id.substring(0, 1).toLowerCase());
+        
+        pdxView.addActionListener(listener);
+        attView.addActionListener(listener);
+        
+        viewMenu.add(pdxView);
+        viewMenu.add(attView);
+        
+        menuBar.add(viewMenu);
+        menuBar.add(gameMenu);
+    }
+    
+    public void buildGameMenu()
+    {
+        try
+        {
+            group = new ButtonGroup();
+            String[] genGames = pkmnDB.getGames(generation);
+            int gameCount = genGames.length;
+            games = new JRadioButtonMenuItem[gameCount];
+
+            for(int i = 0; i < gameCount; i++)
+            {
+                games[i] = new JRadioButtonMenuItem(genGames[i]);
+                games[i].addActionListener(listener);
+                gameMenu.add(games[i]);
+                group.add(games[i]);
+            }
+
+            games[0].setSelected(true);
+        }
+        catch(ArrayIndexOutOfBoundsException ex){}
+    }
+    
+    public void buildScrollPanel()
+    {
+        listDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);  
+        listDisplay.setBackground(Color.white);
+        
+        scrollPane = new JScrollPane();
+        scrollPane.setWheelScrollingEnabled(true);
+        scrollPane.setBackground(Color.white);
+        scrollPane.setPreferredSize(new Dimension(125, 422));
+                
+    mainDisplay.setLeftComponent(scrollPane);
+    }
+    
+    public String getSelectedGame()
+    {
+        return selected.getText();
+    }
+
+    public class Listener implements ActionListener, MouseListener, KeyListener
+    {
+        public Listener(){}
+        
+        public void setAttack()
+        {
+            String attStr = String.format("%01d", viewAttack.attList.getSelectedIndex()+1);
+            viewAttack.setAttack(attStr);
+            viewAttack.setAttackData();
+        }
+        
+        public void setPkmn()
+        {
+            String pkmnStr = String.format("%03d", viewPkmn.pkmnList.getSelectedIndex()+1);
+            viewPkmn.setPkmn(pkmnStr);
+            viewPkmn.setPkmnPanel();
+        }
+        
+        /*
+            This method checks for what is currently displayed
+        */        
+        public void checkView()
+        {
+            if(att == true)
+                setAttack();
+            else if(pkmn == true)
+                setPkmn();
+        }
+        
+        /*
+            This method checks for Home, End, Page Up, Page Down, and Up/Down arrow keys
+        */
+        public void checkKey(int key)
+        {
+            if(key == 33 || key == 34 || key == 35 || key == 36 || key == 38 || key == 40)
+                checkView();
+        }
+        
+        //  modifies the display based on the menu items selected
+        public void actionPerformed(ActionEvent e)
+        {
+            if(e.getSource() == pdxView && !pkmn)
+            {
+                if(att == true)
+                    att = false;
+                
+                viewPkmn = new ViewPkmn();
+                viewPkmn.setGame(game_id);
+                viewPkmn.setPkmnList();
+                    viewPkmn.pkmnList.addMouseListener(listener);
+                    viewPkmn.pkmnList.addKeyListener(listener);
+                    viewPkmn.left.addMouseListener(listener);
+                    viewPkmn.right.addMouseListener(listener);
+                scrollPane.setViewportView(viewPkmn.getList());
+                mainDisplay.setRightComponent(viewPkmn);
+                window.repaint();
+                
+                pkmn = true;
+            }
+            else if(e.getSource() == attView && !att)
+            {
+                if(pkmn == true)
+                    pkmn = false;
+                
+                viewAttack = new ViewAttack();
+                    viewAttack.attList.addKeyListener(listener);
+                    viewAttack.attList.addMouseListener(listener);
+                scrollPane.setViewportView(viewAttack.getList());
+                mainDisplay.setRightComponent(viewAttack);
+                window.repaint();
+                
+                att = true;
+            }            
+            else if(e.getSource() instanceof JRadioButtonMenuItem)
+            {
+                selected = (JRadioButtonMenuItem)e.getSource();
+                
+                String game = selected.getText();
+                
+                if(game.equals("Red") || game.equals("Blue"))
+                    game_id = "rb";
+                else if(game.equals("Yellow"))
+                    game_id = "y";
+                
+                pkmndb.setGame(game_id, game.substring(0, 1).toLowerCase());
+                
+                if(pkmn == true)
+                    viewPkmn.setGame(game_id);
+                else if(att = true)
+                    viewAttack.setGame();
+                
+                viewPkmn.evolutionPnl.repaint();
+            }
+        }
+        
+        //  determines which type of selection was made with the left mouse button
+        public void mouseReleased(MouseEvent e)
+        {
+            boolean arrowButton = false;
+            
+            if(pkmn == true)
+                arrowButton = e.getSource() == viewPkmn.right || e.getSource() == viewPkmn.left;
+            
+            if(e.getButton() == 1 && !arrowButton)
+               checkView();
+        }
+        
+        //  place holder method
+        public void mouseClicked(MouseEvent e){}
+        
+        //  determines which image to display
+        public void mousePressed(MouseEvent e)
+        {
+            if(pkmn == true && viewPkmn.getStatus() && e.getButton() == 1)
+            {
+                if(e.getSource() == viewPkmn.left)
+                {
+                    viewPkmn.right.setEnabled(true);
+                    viewPkmn.left.setEnabled(false);
+                    viewPkmn.evolutionPnl.repaint();
+                    viewPkmn.setImage();
+                }
+                else if(e.getSource() == viewPkmn.right)
+                {
+                    viewPkmn.right.setEnabled(false);
+                    viewPkmn.left.setEnabled(true);
+                    viewPkmn.evolutionPnl.repaint();
+                    viewPkmn.setImage();
+                }
+            }
+        }
+        
+        //  place holder method
+        public void mouseEntered(MouseEvent e){}
+        
+        //  place holder method
+        public void mouseExited(MouseEvent e){}
+        
+        //  uses the key action to change what is displayed 
+        public void keyPressed(KeyEvent e)
+        {
+            //checkKey(e.getKeyCode());
+        }
+        
+        //  uses the key action to change what is displayed
+        public void keyReleased(KeyEvent e)
+        {
+            checkKey(e.getKeyCode());
+        }
+        
+        // place holder method
+        public void keyTyped(KeyEvent e){}
+    }
+}
